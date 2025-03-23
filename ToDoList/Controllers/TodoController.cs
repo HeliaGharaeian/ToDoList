@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using ToDoList.Model;
@@ -6,8 +7,8 @@ using ToDoList.Service;
 
 namespace ToDoList.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]/[action]")]
     public class TasksController : ControllerBase
     {
         private readonly ITaskService _taskService;
@@ -23,10 +24,10 @@ namespace ToDoList.Controllers
             var result = await _taskService.GetAllTasksAsync();
             if (result.IsSuccess)
             {
-                return Ok(result.Data); 
+                return Ok(result.Data);
             }
 
-            return BadRequest(result.ResponseDesc); 
+            return BadRequest(result.ResponseDesc);
         }
 
         [HttpGet("{id}")]
@@ -35,36 +36,31 @@ namespace ToDoList.Controllers
             var result = await _taskService.GetTaskByIdAsync(id);
             if (result.IsSuccess)
             {
-                return Ok(result.Data); 
+                return Ok(result.Data);
             }
 
-            return NotFound(result.ResponseDesc); 
+            return NotFound(result.ResponseDesc);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateTask([FromBody] TaskModel task)
+        public async Task<IActionResult> CreateTask([FromBody] TaskRequestModel request)
         {
-            var result = await _taskService.AddTaskAsync(task);
+            var result = await _taskService.AddTaskAsync(request);
             if (result.IsSuccess)
             {
-                return CreatedAtAction(nameof(GetTaskById), new { id = task.Id }, task);
+                return Ok(result.ResponseDesc);
             }
 
-            return BadRequest(result.ResponseDesc); 
+            return BadRequest(result.ResponseDesc);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTask(Guid id, [FromBody] TaskModel task)
+        public async Task<IActionResult> UpdateTask(Guid id, [FromBody] TaskRequestModel request)
         {
-            if (id != task.Id)
-            {
-                return BadRequest("Task ID mismatch."); 
-            }
-
-            var result = await _taskService.UpdateTaskAsync(task);
+            var result = await _taskService.UpdateTaskAsync(id, request);
             if (result.IsSuccess)
             {
-                return NoContent(); 
+                return Ok(result.ResponseDesc);
             }
 
             return BadRequest(result.ResponseDesc);
@@ -76,10 +72,10 @@ namespace ToDoList.Controllers
             var result = await _taskService.DeleteTaskAsync(id);
             if (result.IsSuccess)
             {
-                return NoContent(); 
+                return Ok(result.ResponseDesc);
             }
 
-            return NotFound(result.ResponseDesc); 
+            return NotFound(result.ResponseDesc);
         }
     }
 }

@@ -8,10 +8,10 @@ namespace ToDoList.Service
 {
     public interface ITaskService
     {
-        Task<CustomActionResult<List<TaskModel>>> GetAllTasksAsync();
-        Task<CustomActionResult<TaskModel>> GetTaskByIdAsync(Guid id);
-        Task<CustomActionResult> AddTaskAsync(TaskModel task);
-        Task<CustomActionResult> UpdateTaskAsync(TaskModel task);
+        Task<CustomActionResult<List<TaskResponseModel>>> GetAllTasksAsync();
+        Task<CustomActionResult<TaskResponseModel>> GetTaskByIdAsync(Guid id);
+        Task<CustomActionResult> AddTaskAsync(TaskRequestModel task);
+        Task<CustomActionResult> UpdateTaskAsync(Guid id, TaskRequestModel task);
         Task<CustomActionResult> DeleteTaskAsync(Guid id);
     }
     public class TaskService : ITaskService
@@ -25,28 +25,28 @@ namespace ToDoList.Service
             _taskValidation = taskValidation;
         }
 
-        public async Task<CustomActionResult<List<TaskModel>>> GetAllTasksAsync()
+        public async Task<CustomActionResult<List<TaskResponseModel>>> GetAllTasksAsync()
         {
             return await _taskRepository.GetAllTasksAsync();
         }
 
-        public async Task<CustomActionResult<TaskModel>> GetTaskByIdAsync(Guid id)
+        public async Task<CustomActionResult<TaskResponseModel>> GetTaskByIdAsync(Guid id)
         {
             return await _taskRepository.GetTaskByIdAsync(id);
         }
 
-        public async Task<CustomActionResult> AddTaskAsync(TaskModel task)
+        public async Task<CustomActionResult> AddTaskAsync(TaskRequestModel task)
         {
             CustomActionResult result = new CustomActionResult();
             result = await _taskValidation.Validate(task);
             return await _taskRepository.AddTaskAsync(task);
         }
 
-        public async Task<CustomActionResult> UpdateTaskAsync(TaskModel task)
+        public async Task<CustomActionResult> UpdateTaskAsync(Guid id, TaskRequestModel task)
         {
             CustomActionResult result = new CustomActionResult();
             result = await _taskValidation.Validate(task);
-            return await _taskRepository.UpdateTaskAsync(task);
+            return await _taskRepository.UpdateTaskAsync(id,task);
         }
 
         public async Task<CustomActionResult> DeleteTaskAsync(Guid id)

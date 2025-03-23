@@ -8,10 +8,10 @@ namespace ToDoList.Repository
 {
     public interface ITaskRepository
     {
-        Task<CustomActionResult<List<TaskModel>>> GetAllTasksAsync();
-        Task<CustomActionResult<TaskModel>> GetTaskByIdAsync(Guid id);
-        Task<CustomActionResult> AddTaskAsync(TaskModel task);
-        Task<CustomActionResult> UpdateTaskAsync(TaskModel task);
+        Task<CustomActionResult<List<TaskResponseModel>>> GetAllTasksAsync();
+        Task<CustomActionResult<TaskResponseModel>> GetTaskByIdAsync(Guid id);
+        Task<CustomActionResult> AddTaskAsync(TaskRequestModel task);
+        Task<CustomActionResult> UpdateTaskAsync(Guid id, TaskRequestModel request);
         Task<CustomActionResult> DeleteTaskAsync(Guid id);
     }
 
@@ -24,139 +24,127 @@ namespace ToDoList.Repository
             _context = context;
         }
 
-        public async Task<CustomActionResult<List<TaskModel>>> GetAllTasksAsync()
+        public async Task<CustomActionResult<List<TaskResponseModel>>> GetAllTasksAsync()
         {
-            try
+            var tasks = await _context.Tasks.ToListAsync();
+            var response = tasks.Select(t => new TaskResponseModel
             {
-                var tasks = await _context.Tasks.ToListAsync();
-                return new CustomActionResult<List<TaskModel>>
-                {
-                    IsSuccess = true,
-                    ResponseDesc = "Tasks retrieved successfully.",
-                    Data = tasks
-                };
-            }
-            catch (Exception ex)
+                Id = t.Id,
+                Title = t.Title,
+                Description = t.Description,
+                IsCompleted = t.IsCompleted,
+                CreatedDate = t.CreatedDate,
+                UpdatedDate = t.UpdatedDate
+            }).ToList();
+
+            return new CustomActionResult<List<TaskResponseModel>>
             {
-                return new CustomActionResult<List<TaskModel>>
+                IsSuccess = true,
+                ResponseDesc = "Tasks retrieved successfully.",
+                Data = response
+            };
+        }
+
+        public async Task<CustomActionResult<TaskResponseModel>> GetTaskByIdAsync(Guid id)
+        {
+            var task = await _context.Tasks.FindAsync(id);
+            if (task == null)
+            {
+                return new CustomActionResult<TaskResponseModel>
                 {
                     IsSuccess = false,
-                    ResponseDesc = $"Error retrieving tasks: {ex.Message}",
+                    ResponseDesc = "Task not found.",
                     Data = null
                 };
             }
+
+            var response = new TaskResponseModel
+            {
+                Id = task.Id,
+                Title = task.Title,
+                Description = task.Description,
+                IsCompleted = task.IsCompleted,
+                CreatedDate = task.CreatedDate,
+                UpdatedDate = task.UpdatedDate
+            };
+
+            return new CustomActionResult<TaskResponseModel>
+            {
+                IsSuccess = true,
+                ResponseDesc = "Task retrieved successfully.",
+                Data = response
+            };
         }
 
-        public async Task<CustomActionResult<TaskModel>> GetTaskByIdAsync(Guid id)
+        public async Task<CustomActionResult> AddTaskAsync(TaskRequestModel request)
         {
-            try
+            var task = new TaskResponseModel
             {
-                var task = await _context.Tasks.FindAsync(id);
-                if (task == null)
-                {
-                    return new CustomActionResult<TaskModel>
-                    {
-                        IsSuccess = false,
-                        ResponseDesc = "Task not found.",
-                        Data = null
-                    };
-                }
+                Id = Guid.NewGuid(), // Automatically generate the ID
+                Title = request.Title,
+                Description = request.Description,
+                IsCompleted = request.IsCompleted,
+                CreatedDate = DateTime.UtcNow, // Set the creation timestamp
+                UpdatedDate = null // UpdatedDate is initially null
+            };
 
-                return new CustomActionResult<TaskModel>
-                {
-                    IsSuccess = true,
-                    ResponseDesc = "Task retrieved successfully.",
-                    Data = task
-                };
-            }
-            catch (Exception ex)
+            _context.Tasks.Add(task);
+            await _context.SaveChangesAsync();
+
+            return new CustomActionResult
             {
-                return new CustomActionResult<TaskModel>
-                {
-                    IsSuccess = false,
-                    ResponseDesc = $"Error retrieving task: {ex.Message}",
-                    Data = null
-                };
-            }
+                IsSuccess = true,
+                ResponseDesc = "Task added successfully."
+            };
         }
 
-        public async Task<CustomActionResult> AddTaskAsync(TaskModel task)
+        public async Task<CustomActionResult> UpdateTaskAsync(Guid id, TaskRequestModel request)
         {
-            try
-            {
-                _context.Tasks.Add(task);
-                await _context.SaveChangesAsync();
-
-                return new CustomActionResult
-                {
-                    IsSuccess = true,
-                    ResponseDesc = "Task added successfully."
-                };
-            }
-            catch (Exception ex)
+            var existingTask = await _context.Tasks.FindAsync(id);
+            if (existingTask == null)
             {
                 return new CustomActionResult
                 {
                     IsSuccess = false,
-                    ResponseDesc = $"Error adding task: {ex.Message}"
+                    ResponseDesc = "Task not found."
                 };
             }
-        }
 
-        public async Task<CustomActionResult> UpdateTaskAsync(TaskModel task)
-        {
-            try
-            {
-                _context.Entry(task).State = EntityState.Modified;
-                await _context.SaveChangesAsync();
+            existingTask.Title = request.Title;
+            existingTask.Description = request.Description;
+            existingTask.IsCompleted = request.IsCompleted;
+            existingTask.UpdatedDate = DateTime.UtcNow; // Set the update timestamp
 
-                return new CustomActionResult
-                {
-                    IsSuccess = true,
-                    ResponseDesc = "Task updated successfully."
-                };
-            }
-            catch (Exception ex)
+            _context.Entry(existingTask).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return new CustomActionResult
             {
-                return new CustomActionResult
-                {
-                    IsSuccess = false,
-                    ResponseDesc = $"Error updating task: {ex.Message}"
-                };
-            }
+                IsSuccess = true,
+                ResponseDesc = "Task updated successfully."
+            };
         }
 
         public async Task<CustomActionResult> DeleteTaskAsync(Guid id)
         {
-            try
-            {
-                var task = await _context.Tasks.FindAsync(id);
-                if (task == null)
-                {
-                    return new CustomActionResult
-                    {
-                        IsSuccess = false,
-                        ResponseDesc = "Task not found."
-                    };
-                }
-
-                _context.Tasks.Remove(task);
-                await _context.SaveChangesAsync();
-
-                return new CustomActionResult
-                {
-                    IsSuccess = true,
-                    ResponseDesc = "Task deleted successfully."
-                };
-            }
-            catch (Exception ex)
+            var task = await _context.Tasks.FindAsync(id);
+            if (task == null)
             {
                 return new CustomActionResult
                 {
                     IsSuccess = false,
-                    ResponseDesc = $"Error deleting task: {ex.Message}"
+                    ResponseDesc = "Task not found."
                 };
             }
+
+            _context.Tasks.Remove(task);
+            await _context.SaveChangesAsync();
+
+            return new CustomActionResult
+            {
+                IsSuccess = true,
+                ResponseDesc = "Task deleted successfully."
+            };
         }
     }
 }

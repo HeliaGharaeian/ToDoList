@@ -5,12 +5,12 @@ namespace ToDoList.Validation
 {
     public interface ITaskValidation
     {
-        Task<CustomActionResult> Validate(TaskModel task);
+        Task<CustomActionResult> Validate(TaskRequestModel task);
 
     }
     public class TaskValidation: ITaskValidation
     {
-        public async Task<CustomActionResult> Validate(TaskModel task)
+        public async Task<CustomActionResult> Validate(TaskRequestModel task)
         {
             CustomActionResult result = new CustomActionResult() { IsSuccess = true };
 
@@ -33,7 +33,8 @@ namespace ToDoList.Validation
             }
 
             return result;
-
         }
+
+       
     }
 }
