@@ -1,0 +1,14 @@
+﻿@using ToDoList.Model
+@model TaskResponseModel
+
+<h2>Delete Task</h2>
+<div>
+    <h3>@Model.Title</h3>
+    <p>@Model.Description</p>
+    <p>Is Completed: @Model.IsCompleted</p>
+    <p>Created Date: @Model.CreatedDate</p>
+    <p>Updated Date: @Model.UpdatedDate</p>
+</div>
+<form asp-action="DeleteTask" method="post">
+    <button type="submit">Delete</button>
+</form>

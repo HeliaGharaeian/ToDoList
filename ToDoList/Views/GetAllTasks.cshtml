@@ -1,0 +1,27 @@
+﻿@using ToDoList.Model
+@model List<TaskResponseModel>
+
+<h2>All Tasks</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Is Completed</th>
+            <th>Created Date</th>
+            <th>Updated Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var task in Model)
+        {
+            <tr>
+                <td>@task.Title</td>
+                <td>@task.Description</td>
+                <td>@task.IsCompleted</td>
+                <td>@task.CreatedDate</td>
+                <td>@task.UpdatedDate</td>
+            </tr>
+        }
+    </tbody>
+</table>

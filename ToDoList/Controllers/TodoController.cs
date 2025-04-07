@@ -6,7 +6,7 @@ namespace ToDoList.Controllers
 {
     [ApiController]
     [Route("api/[controller]/[action]")]
-    public class TasksController : ControllerBase
+    public class TasksController : Controller
     {
         private readonly ITaskService _taskService;
 
@@ -21,22 +21,22 @@ namespace ToDoList.Controllers
             var result = await _taskService.GetAllTasksAsync();
             if (result.IsSuccess)
             {
-                return Ok(result.Data);
+                return View(result.Data);
             }
 
-            return BadRequest(result.ResponseDesc);
+            return View("Error", result.ResponseDesc);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTaskById(Guid id)
         {
-            var result =            await _taskService.GetTaskByIdAsync(id);
+            var result = await _taskService.GetTaskByIdAsync(id);
             if (result.IsSuccess)
             {
-                return Ok(result.Data);
+                return View(result.Data);
             }
 
-            return NotFound(result.ResponseDesc);
+            return View("Error", result.ResponseDesc);
         }
 
         [HttpPost]
@@ -45,10 +45,10 @@ namespace ToDoList.Controllers
             var result = await _taskService.AddTaskAsync(request);
             if (result.IsSuccess)
             {
-                return Ok(result.ResponseDesc);
+                return RedirectToAction("GetAllTasks");
             }
 
-            return BadRequest(result.ResponseDesc);
+            return View("Error", result.ResponseDesc);
         }
 
         [HttpPut("{id}")]
@@ -57,10 +57,10 @@ namespace ToDoList.Controllers
             var result = await _taskService.UpdateTaskAsync(id, request);
             if (result.IsSuccess)
             {
-                return Ok(result.ResponseDesc);
+                return RedirectToAction("GetAllTasks");
             }
 
-            return BadRequest(result.ResponseDesc);
+            return View("Error", result.ResponseDesc);
         }
 
         [HttpDelete("{id}")]
@@ -69,10 +69,11 @@ namespace ToDoList.Controllers
             var result = await _taskService.DeleteTaskAsync(id);
             if (result.IsSuccess)
             {
-                return Ok(result.ResponseDesc);
+                return RedirectToAction("GetAllTasks");
             }
 
-            return NotFound(result.ResponseDesc);
+            return View("Error", result.ResponseDesc);
         }
+
     }
 }
