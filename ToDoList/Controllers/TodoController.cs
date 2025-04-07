@@ -30,7 +30,7 @@ namespace ToDoList.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTaskById(Guid id)
         {
-            var result = await _taskService.GetTaskByIdAsync(id);
+            var result =            await _taskService.GetTaskByIdAsync(id);
             if (result.IsSuccess)
             {
                 return Ok(result.Data);
