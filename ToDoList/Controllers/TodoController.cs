@@ -1,7 +1,4 @@
-﻿using Azure.Core;
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Mvc;
 using ToDoList.Model;
 using ToDoList.Service;
 
@@ -9,7 +6,7 @@ namespace ToDoList.Controllers
 {
     [ApiController]
     [Route("api/[controller]/[action]")]
-    public class TasksController : ControllerBase
+    public class TasksController : Controller
     {
         private readonly ITaskService _taskService;
 
@@ -19,57 +16,83 @@ namespace ToDoList.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllTasks()
+        public async Task<IActionResult> Index()
         {
-            var result = await _taskService.GetAllTasksAsync();
-            if (result.IsSuccess)
-            {
-                return Ok(result.Data);
-            }
-
-            return BadRequest(result.ResponseDesc);
+            Model.Base.CustomActionResult<List<TaskResponseModel>> result = await _taskService.GetAllTasksAsync();
+            return View(result.Data);  // Render a Razor View
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetTaskById(Guid id)
+        public async Task<IActionResult> Details(Guid id)
         {
-            var result = await _taskService.GetTaskByIdAsync(id);
-            if (result.IsSuccess)
-            {
-                return Ok(result.Data);
-            }
+            Model.Base.CustomActionResult<TaskResponseModel> result = await _taskService.GetTaskByIdAsync(id);
+            if (!result.IsSuccess)
+                return NotFound();  // Returns 404 page
 
-            return NotFound(result.ResponseDesc);
+            return View(result.Data);  // Render Details.cshtml
+        }
+
+        [HttpGet("create")]
+        public IActionResult Create()
+        {
+            return View(new TaskRequestModel());  // Empty request model for form
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateTask([FromBody] TaskRequestModel request)
+        public async Task<IActionResult> Create(TaskRequestModel request)
         {
-            var result = await _taskService.AddTaskAsync(request);
-            if (result.IsSuccess)
+            if (!ModelState.IsValid)
+                return View(request);  // Re-show form with errors
+
+            Model.Base.CustomActionResult result = await _taskService.AddTaskAsync(request);
+            if (!result.IsSuccess)
             {
-                return Ok(result.ResponseDesc);
+                ModelState.AddModelError("", result.ResponseDesc);
+                return View(request);
             }
 
-            return BadRequest(result.ResponseDesc);
+            return RedirectToAction(nameof(Index));
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTask(Guid id, [FromBody] TaskRequestModel request)
+        [HttpGet("edit/{id}")]
+        public async Task<IActionResult> Edit(Guid id)
         {
-            var result = await _taskService.UpdateTaskAsync(id, request);
-            if (result.IsSuccess)
+            Model.Base.CustomActionResult<TaskResponseModel> result = await _taskService.GetTaskByIdAsync(id);
+            if (!result.IsSuccess)
+                return NotFound();
+
+            // Convert ResponseModel to RequestModel for editing
+            TaskRequestModel requestModel = new TaskRequestModel
             {
-                return Ok(result.ResponseDesc);
+                Title = result.Data.Title,
+                Description = result.Data.Description,
+                IsCompleted = result.Data.IsCompleted
+            };
+
+            return View(requestModel);
+        }
+
+        // POST: /tasks/edit/{id}
+        [HttpPost("edit/{id}")]
+        public async Task<IActionResult> Edit(Guid id, TaskRequestModel request)
+        {
+            if (!ModelState.IsValid)
+                return View(request);
+
+            Model.Base.CustomActionResult result = await _taskService.UpdateTaskAsync(id, request);
+            if (!result.IsSuccess)
+            {
+                ModelState.AddModelError("", result.ResponseDesc);
+                return View(request);
             }
 
-            return BadRequest(result.ResponseDesc);
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(Guid id)
         {
-            var result = await _taskService.DeleteTaskAsync(id);
+            Model.Base.CustomActionResult result = await _taskService.DeleteTaskAsync(id);
             if (result.IsSuccess)
             {
                 return Ok(result.ResponseDesc);
